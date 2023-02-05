@@ -15,8 +15,8 @@
 #define N 10e6
 
 double f(double x);     //La funcion a integrar
-double calc(int n, double a, double h, double integral );     //La funcion a integrar
-double trapezoides(double a, double b, int n);
+double calc(int n,int k, double a, double h, double integral );     //La funcion a integrar
+double trapezoides(double a, double b, int n, int c);
 
 int main(int argc, char* argv[]) {
   double integral;
@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
 
   //---- Aproximacion de la integral
   //h = (b-a)/n;
-  integral = trapezoides(a,b,n);
+  integral = trapezoides(a,b,n, c);
 
   printf("Con n = %d trapezoides, nuestra aproximacion \n",n);
   printf("de la integral de %f a %f es = %.10f\n", a,b,integral);
@@ -47,23 +47,23 @@ int main(int argc, char* argv[]) {
 // Input: a,b,n,h
 // Output: integral
 //------------------------------------------
-double trapezoides(double a, double b, int n) {
-  double integral, h, iop;
-  int k;
+double trapezoides(double a, double b, int n, int c) {
+  double integral, h, integralCopy;
+  int k, k2;
 
   //---- Ancho de cada trapezoide
   h = (b-a)/n;
   //---- Valor inicial de la integral (valores extremos)
   integral = (f(a) + f(b)) / 2.0;
-  int iterationPerThread;
 
-  iterationPerThread = n/10;
-  #pragma omp parallel num_threads(10)
-    iop = calc(iterationPerThread, a, h, integral);
-    #pragma omp atomic
-    integral += iop;
+  #pragma omp parallel num_threads(c)
+  integral, k2 = calc(n,k, a, h, integral);
+    // printf("%d %d \n", integral, k2);
+  #pragma omp atomic
+  integralCopy += integral;
+  k += k2;
 
-  integral = integral * h;
+  integralCopy = (integralCopy * h);
 
   return integral;
 }/*trapezoides*/
@@ -82,8 +82,8 @@ double f(double x) {
   return return_val;
 }/*f*/
 
-double calc(int n, double a,double h,double integral) {
-  for(int k = 1; k <= n-1; k++) {
+double calc(int n,int k, double a,double h,double integral) {
+  for(k ; k <= n-1; k++) {
     integral += f(a + k*h);
   }
 
